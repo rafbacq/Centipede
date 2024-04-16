@@ -1,0 +1,91 @@
+import javax.swing.*;
+import java.awt.*;
+import java.util.ArrayList;
+
+public class Spider {
+    public static void main(String[] args) {
+        Program program = new Program();
+        program.run();
+    }
+}
+
+class Program {
+    private JFrame frame;
+    private DrawPanel drawPanel;
+    private Ball ball;
+    private int windowWidth = 400;
+    private int windowHeight = 400;
+
+    void run() {
+        // Initialize program
+        frame = new JFrame("Art Assignment");
+        drawPanel = new DrawPanel();
+        frame.add(drawPanel);
+        frame.pack();
+        frame.setSize(windowWidth, windowHeight);
+        frame.setVisible(true);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        // Initialize ball
+        ball = new Ball(
+                (int) (Math.random() * windowWidth),
+                (int) (Math.random() * windowHeight),
+                (int) (Math.random() * 20) + 10,
+                Color.black,
+                (int) Math.floor((Math.random() * 10) - 5),
+                (int) Math.floor((Math.random() * 10) - 5)
+        );
+
+        // Main loop
+        while (true) {
+            ball.update();
+            frame.repaint();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public class DrawPanel extends JPanel {
+        @Override
+        public void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            ball.draw(g);
+        }
+    }
+
+    public class Ball {
+        private int posX, posY, size;
+        private Color color;
+        private int vx, vy;
+
+        public Ball(int posX, int posY, int size, Color color, int vx, int vy) {
+            this.posX = posX;
+            this.posY = posY;
+            this.size = size;
+            this.color = color;
+            this.vx = vx;
+            this.vy = vy;
+        }
+
+        public void update() {
+            posX += vx;
+            posY += vy;
+
+            // Bounce off walls
+            if (posX <= 0 || posX + size >= windowWidth) {
+                vx = -vx;
+            }
+            if (posY <= 0 || posY + size >= windowHeight) {
+                vy = -vy;
+            }
+        }
+
+        public void draw(Graphics g) {
+            g.setColor(color);
+            g.fillOval(posX, posY, size, size);
+        }
+    }
+}
