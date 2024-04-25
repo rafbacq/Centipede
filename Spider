@@ -19,6 +19,7 @@ class Program {
         // Initialize program
         frame = new JFrame("Art Assignment");
         drawPanel = new DrawPanel();
+       // drawPanel.setPreferredSize(new Dimension(1600, 400));
         frame.add(drawPanel);
         frame.pack();
         frame.setSize(windowWidth, windowHeight);
@@ -28,7 +29,7 @@ class Program {
         // Initialize ball
         ball = new Ball(
                 (int) (Math.random() * windowWidth),
-                (int) (Math.random() * windowHeight),
+                (int) (Math.random() * windowHeight/2 + 400),
                 15,
                 Color.black,
                 2, // Initial velocity along X-axis
@@ -81,7 +82,7 @@ class Program {
                     stepsRemaining--;
                 } else {
                     stage = 1;
-                    stepsRemaining = (int) (Math.random() * 50) + 5; 
+                    stepsRemaining = (int) (Math.random() * 50) + 5;
                 }
             } else if (stage == 1) {
                 if (stepsRemaining > 0) {
@@ -89,9 +90,12 @@ class Program {
                     posY -= vy;
                     stepsRemaining--;
                 } else {
-                   
+                    // If in the top half of the frame, bounce back towards the bottom
+                    if (posY < windowHeight / 2) {
+                        vy = -vy;
+                    }
                     stage = 2; // Move to diagonally down stage
-                    stepsRemaining = (int) (Math.random() * 50) + 5; 
+                    stepsRemaining = (int) (Math.random() * 50) + 5;
                 }
             } else {
                 if (stepsRemaining > 0) {
@@ -110,10 +114,11 @@ class Program {
             if (posX <= 0 || posX + size >= windowWidth) {
                 vx = -vx;
             }
-            if (posY <= 0 || posY + size >= windowHeight) {
+            if (posY <= windowHeight/2 || posY + size >= windowHeight) {
                 vy = -vy;
             }
         }
+
 
         public void draw(Graphics g) {
         	  g.setColor(color);
