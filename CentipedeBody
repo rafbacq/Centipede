@@ -1,0 +1,78 @@
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class CentipedeBody extends JPanel implements ActionListener {
+    private static final int UNIT_SIZE = 20;
+    private static final int WIDTH = 1600;
+    private static final int HEIGHT = 800;
+    private static final int DELAY = 100;
+    private static final int INITIAL_LENGTH = 20; // Initial length of the centipede
+
+    private Timer timer;
+    private int[] x = new int[INITIAL_LENGTH];
+    private int[] y = new int[INITIAL_LENGTH];
+    private int[] velX = new int[INITIAL_LENGTH];
+    private int[] velY = new int[INITIAL_LENGTH];
+    private int centipedeLength = INITIAL_LENGTH;
+
+    public CentipedeBody() {
+        this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
+        this.setBackground(Color.BLACK);
+        timer = new Timer(DELAY, this);
+        timer.start();
+
+        int startX = (WIDTH - (centipedeLength * UNIT_SIZE)) / 2;
+        for (int i = 0; i < centipedeLength; i++) {
+            x[i] = startX + i * UNIT_SIZE;
+            y[i] = 0;
+            velX[i] = UNIT_SIZE;
+            velY[i] = 0;
+        }
+    }
+
+    public void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        drawCentipede(g);
+    }
+
+    public void drawCentipede(Graphics g) {
+    	
+        g.setColor(Color.GREEN);
+        for (int i = 0; i < centipedeLength; i++) {
+            g.fillOval(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
+        }
+        g.setColor(Color.RED);
+        g.fillOval(x[centipedeLength-1] + UNIT_SIZE / 4, y[centipedeLength-1] + UNIT_SIZE / 4 -2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
+        g.fillOval(x[centipedeLength-1] + UNIT_SIZE / 4, 8+ y[centipedeLength-1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
+        
+    }
+
+    public void move() {
+        // Move each segment of the centipede
+        for (int i = 0; i < centipedeLength; i++) {
+            x[i] += velX[i];
+            y[i] += velY[i];
+            if (x[i] < 0 || x[i] >= WIDTH || y[i] < 0 || y[i] >= HEIGHT) {
+                velX[i] *= -1; 
+                y[i] += UNIT_SIZE;
+            }
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        move();
+        repaint();
+    }
+
+    public static void main(String[] args) {
+        JFrame frame = new JFrame("Centipede Game");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        CentipedeBody game = new CentipedeBody();
+        frame.add(game);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setVisible(true);
+    }
+}
