@@ -306,7 +306,7 @@ class CentipedeBody extends JPanel implements ActionListener {
 	        for (int j = 0; j < GameScreenTest.mushroomX.size(); j++) {
 	            int mx = GameScreenTest.mushroomX.get(j);
 	            int my = GameScreenTest.mushroomY.get(j);
-	            if (x[i] >= mx && x[i] <= mx + 32 && y[i] >= my && y[i] <= my + 32) {
+	            if ((velX[i] > 0 && x[i] >= mx && x[i] <= mx + 32 && y[i] >= my && y[i] <= my + 32) ||(velX[i] < 0 && x[i] <= mx && x[i] >= mx + 32 && y[i] >= my && y[i] <= my + 16) ){
 	                // Mushroom hit, change direction and move down
 	            	y[i] += UNIT_SIZE;
 	                velX[i] *= -1; // Change direction
