@@ -43,7 +43,7 @@ public class GameScreenTest {
        centipedeMap = new String[1936][1056];
        for (int i = 0; i < 50; i++) {
            mushroomX.add((int) (Math.random() * (PANEL_WIDTH - 6))); // Random x within the first half of the panel
-           mushroomY.add((int) (Math.random() * (PANEL_HEIGHT - 700)) + (PANEL_HEIGHT / 11 + 5)); // Random y within the panel
+           mushroomY.add(((int) (Math.random() * 30 + 1 )* 20) + 94); 
            mushroomStatus.add("Full"); // Initially, all mushrooms are full
        }
        createAndShowGUI();
@@ -94,7 +94,7 @@ public class GameScreenTest {
                Graphics2D g2d = (Graphics2D) g;
                switch (status) {
                    case "Full":
-                       ImageIcon stage0Mushroom = new ImageIcon(getClass().getResource("Stage0Mushroom.png"));
+                       ImageIcon stage0Mushroom = new ImageIcon(getClass().getResource("Stage0Mushroom.png")); //mushroom is 19 by 19 px
                        Image stage0MushroomImage = stage0Mushroom.getImage();
                        g2d.drawImage(stage0MushroomImage, x, y, this);
                        break;
@@ -175,37 +175,6 @@ public class GameScreenTest {
            }
        }).start();
       
-      
-       // Centipede movement thread
-      /* new Thread(() -> {
-           while (true) {
-               // Move each segment of the centipede
-               for (int i = 0; i < centipedeLength; i++) {
-                   centipedeX[i] += velX[i];
-                   centipedeY[i] += velY[i];
-                   if (centipedeX[i] < 0 || centipedeX[i] >= WIDTH || centipedeY[i] < 0 || centipedeY[i] >= HEIGHT) {
-                       velX[i] *= -1;
-                       centipedeY[i] += UNIT_SIZE;
-                   }
-                   // Check for collision with mushrooms
-                   for (int j = 0; j < mushroomX.size(); j++) {
-                       int mx = mushroomX.get(j);
-                       int my = mushroomY.get(j);
-                       if (centipedeX[i] >= mx && centipedeX[i] <= mx + 32 && centipedeY[i] >= my && centipedeY[i] <= my + 32) {
-                           velX[i] *= -1; // Change direction if collision with mushroom
-                           centipedeY[i] += UNIT_SIZE; // Move down one unit
-                           break; // Exit the loop after collision
-                       }
-                   }
-               }
-               innerFrame.repaint(); // Repaint panel after moving centipede
-               try {
-                   Thread.sleep(DELAY); // Adjust centipede movement delay
-               } catch (InterruptedException ex) {
-                   ex.printStackTrace();
-               }
-           }
-       }).start();*/
        CentipedeBody centipedeBody = new CentipedeBody();
        centipedeBody.setOpaque(false);
 
@@ -216,45 +185,7 @@ public class GameScreenTest {
        innerFrame.requestFocusInWindow();
    }
   
-  /* private static void initCentipede() {
-       timer = new Timer(DELAY, e -> {
-           // Move each segment of the centipede
-           for (int i = 0; i < centipedeLength; i++) {
-               centipedeX[i] += velX[i];
-               centipedeY[i] += velY[i];
-               // Check if the centipede goes out of bounds
-               if (centipedeX[i] < 0 || centipedeX[i] >= WIDTH || centipedeY[i] < 0 || centipedeY[i] >= HEIGHT) {
-                   velX[i] *= -1; // Reverse direction if out of bounds
-                   centipedeY[i] += UNIT_SIZE; // Move down one unit
-               }
-               // Check for collision with mushrooms
-               for (int j = 0; j < mushroomX.size(); j++) {
-                   int mx = mushroomX.get(j);
-                   int my = mushroomY.get(j);
-                   if (centipedeX[i] >= mx && centipedeX[i] <= mx + 32 && centipedeY[i] >= my && centipedeY[i] <= my + 32) {
-                       velX[i] *= -1; // Change direction if collision with mushroom
-                       centipedeY[i] += UNIT_SIZE; // Move down one unit
-                       break; // Exit the loop after collision
-                   }
-               }
-           }
-           innerFrame.repaint(); // Repaint panel after moving centipede
-       });
-       timer.start();
-   }*/
-  
-/*public static void drawCentipede(Graphics g) {
-   	
-       g.setColor(Color.GREEN);
-       for (int i = 0; i < centipedeLength; i++) {
-           g.fillOval(centipedeX[i], centipedeY[i], UNIT_SIZE, UNIT_SIZE);
-       }
-       g.setColor(Color.RED);
-       g.fillOval(centipedeX[centipedeLength-1] + UNIT_SIZE / 4, centipedeY[centipedeLength-1] + UNIT_SIZE / 4 -2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
-       g.fillOval(centipedeX[centipedeLength-1] + UNIT_SIZE / 4, 8+ centipedeY[centipedeLength-1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
-      
-   }
-   */
+ 
 }
 class CentipedeBody extends JPanel implements ActionListener {
    private static final int UNIT_SIZE = 20;
@@ -306,7 +237,7 @@ class CentipedeBody extends JPanel implements ActionListener {
 	        for (int j = 0; j < GameScreenTest.mushroomX.size(); j++) {
 	            int mx = GameScreenTest.mushroomX.get(j);
 	            int my = GameScreenTest.mushroomY.get(j);
-	            if ((velX[i] > 0 && x[i] >= mx && x[i] <= mx + 32 && y[i] >= my && y[i] <= my + 32) ||(velX[i] < 0 && x[i] <= mx && x[i] >= mx + 32 && y[i] >= my && y[i] <= my + 16) ){
+	            if ((velX[i] > 0 && x[i] >= mx && y[i] >= my) ||(velX[i] < 0 && x[i] <= mx && y[i] >= my) ){
 	                // Mushroom hit, change direction and move down
 	            	y[i] += UNIT_SIZE;
 	                velX[i] *= -1; // Change direction
