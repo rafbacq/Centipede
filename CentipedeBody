@@ -4,9 +4,9 @@ import java.awt.event.*;
 
 public class CentipedeBody extends JPanel implements ActionListener {
     private static final int UNIT_SIZE = 20;
-    private static final int WIDTH = 1600;
-    private static final int HEIGHT = 800;
-    private static final int DELAY = 100;
+    private static final int WIDTH = 1936;
+    private static final int HEIGHT = 1056;
+    private static final int DELAY = 60;
     private static final int INITIAL_LENGTH = 20; // Initial length of the centipede
 
     private Timer timer;
@@ -18,14 +18,14 @@ public class CentipedeBody extends JPanel implements ActionListener {
 
     public CentipedeBody() {
         this.setPreferredSize(new Dimension(WIDTH, HEIGHT));
-        this.setBackground(Color.BLACK);
+        this.setBackground(null);
         timer = new Timer(DELAY, this);
         timer.start();
 
-        int startX = (WIDTH - (centipedeLength * UNIT_SIZE)) / 2;
+        int startX = 0;
         for (int i = 0; i < centipedeLength; i++) {
             x[i] = startX + i * UNIT_SIZE;
-            y[i] = 0;
+            y[i] = 87;
             velX[i] = UNIT_SIZE;
             velY[i] = 0;
         }
@@ -49,16 +49,30 @@ public class CentipedeBody extends JPanel implements ActionListener {
     }
 
     public void move() {
-        // Move each segment of the centipede
-        for (int i = 0; i < centipedeLength; i++) {
-            x[i] += velX[i];
-            y[i] += velY[i];
-            if (x[i] < 0 || x[i] >= WIDTH || y[i] < 0 || y[i] >= HEIGHT) {
-                velX[i] *= -1; 
-                y[i] += UNIT_SIZE;
-            }
-        }
-    }
+	    // Move each segment of the centipede
+	    for (int i = 0; i < centipedeLength; i++) {
+	        x[i] += velX[i];
+	        y[i] += velY[i];
+
+	        // Check for collision with mushrooms
+	        for (int j = 0; j < GameScreenTest.mushroomX.size(); j++) {
+	            int mx = GameScreenTest.mushroomX.get(j);
+	            int my = GameScreenTest.mushroomY.get(j);
+	            if (x[i] >= mx && x[i] <= mx + 32 && y[i] >= my && y[i] <= my + 32) {
+	                // Mushroom hit, change direction and move down
+	                velX[i] *= -1; // Change direction
+	                y[i] += UNIT_SIZE; // Move down one unit
+	                break; // Exit the loop after collision with one mushroom
+	            }
+	        }
+
+	        // Check if the centipede goes out of bounds
+	        if (x[i] < 0 || x[i] >= WIDTH) {
+	            velX[i] *= -1; // Reverse direction
+	            y[i] += UNIT_SIZE; // Move down one unit
+	        }
+	    }
+	}
 
     @Override
     public void actionPerformed(ActionEvent e) {
