@@ -1,7 +1,5 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
@@ -27,6 +25,7 @@ public class GameScreenTest {
     private static Graphics2D g2d;
 
     private static List<CentipedeBody> centipedes = new ArrayList<>();
+    private static Spider spider;
 
     public static void main(String[] args) {
         mushroomX = new ArrayList<>();
@@ -81,6 +80,10 @@ public class GameScreenTest {
                 for (CentipedeBody centipede : centipedes) {
                     centipede.drawCentipede(g2d);
                 }
+                // Draw spider
+                if (spider != null) {
+                    spider.draw(g2d);
+                }
                 g2d.dispose();
             }
 
@@ -107,7 +110,7 @@ public class GameScreenTest {
                             x -= 5 * MOVE_AMOUNT;
                         break;
                     case KeyEvent.VK_RIGHT:
-                        if (x + 5 * MOVE_AMOUNT <= 1936)
+                        if (x + 5 * MOVE_AMOUNT <= PANEL_WIDTH)
                             x += 5 * MOVE_AMOUNT;
                         break;
                     case KeyEvent.VK_UP:
@@ -115,7 +118,7 @@ public class GameScreenTest {
                             y -= 5 * MOVE_AMOUNT;
                         break;
                     case KeyEvent.VK_DOWN:
-                        if (y + 5 * MOVE_AMOUNT <= (1056 - (PANEL_HEIGHT / 11 + 5)))
+                        if (y + 5 * MOVE_AMOUNT <= (PANEL_HEIGHT - (PANEL_HEIGHT / 11 + 5)))
                             y += 5 * MOVE_AMOUNT;
                         break;
                     case KeyEvent.VK_SPACE: // Space bar pressed
@@ -137,43 +140,40 @@ public class GameScreenTest {
 
         // Initialize centipedes
         centipedes.add(new CentipedeBody(0, 87, 20, true));
+        // Initialize spider
+        spider = new Spider((int) (Math.random() * PANEL_WIDTH), PANEL_HEIGHT / 2 + 300, 15, Color.GREEN, 6, 6);
 
         // Bullet animation thread
         new Thread(() -> {
             while (true) {
+                List<Point> bulletsToRemove = new ArrayList<>();
                 Iterator<Point> bulletIterator = bullets.iterator();
                 while (bulletIterator.hasNext()) {
                     Point bullet = bulletIterator.next();
                     bullet.y -= BULLET_SPEED; // Move bullets upwards
-                    System.out.println("Inside bullet");
+
                     // Check for collision with mushrooms
-                    Iterator<Integer> iteratorX = mushroomX.iterator();
-                    Iterator<Integer> iteratorY = mushroomY.iterator();
-                    Iterator<String> iteratorStatus = mushroomStatus.iterator();
-                    while (iteratorX.hasNext() && iteratorY.hasNext() && iteratorStatus.hasNext()) {
-                        int mx = iteratorX.next();
-                        int my = iteratorY.next();
-                        String status = iteratorStatus.next();
+                    for (int i = 0; i < mushroomX.size(); i++) {
+                        int mx = mushroomX.get(i);
+                        int my = mushroomY.get(i);
+                        String status = mushroomStatus.get(i);
                         if (status.equals("Full") && bullet.x >= mx && bullet.x <= mx + 32 && bullet.y >= my && bullet.y <= my + 32) {
                             // Bullet hit a mushroom
-                            iteratorX.remove(); // Remove the mushroom's x coordinate
-                            iteratorY.remove(); // Remove the mushroom's y coordinate
-                            iteratorStatus.remove(); // Remove the mushroom's status
-
-                            bulletIterator.remove(); // Remove the bullet
+                            mushroomX.remove(i);
+                            mushroomY.remove(i);
+                            mushroomStatus.remove(i);
+                            bulletsToRemove.add(bullet); // Mark the bullet for removal
                             break; // Exit the loop after hitting one mushroom
                         }
                     }
 
                     // Check for collision with centipede segments
-                    Iterator<CentipedeBody> centipedeIterator = centipedes.iterator();
-                    while (centipedeIterator.hasNext()) {
-                        CentipedeBody centipede = centipedeIterator.next();
+                    for (CentipedeBody centipede : centipedes) {
                         for (int i = 0; i < centipede.getLength(); i++) {
                             if (bullet.x >= centipede.x[i] && bullet.x <= centipede.x[i] + CentipedeBody.UNIT_SIZE &&
                                     bullet.y >= centipede.y[i] && bullet.y <= centipede.y[i] + CentipedeBody.UNIT_SIZE) {
                                 // Bullet hit a centipede segment
-                                bulletIterator.remove(); // Remove the bullet
+                                bulletsToRemove.add(bullet); // Mark the bullet for removal
 
                                 // Place a mushroom at the hit location
                                 mushroomX.add(centipede.x[i]);
@@ -185,22 +185,39 @@ public class GameScreenTest {
                                     CentipedeBody newCentipede = new CentipedeBody(centipede.x[i + 1], centipede.y[i + 1], centipede.getLength() - i - 1, centipede.velX[0] < 0);
                                     newCentipede.moveDownAndSwitchDirection();
                                     centipedes.add(newCentipede);
-                                    System.out.println(centipedes.size());
                                 }
                                 centipede.shorten(i);
-                                centipedeIterator.remove();
-
                                 break; // Exit the loop after hitting one segment
                             }
                         }
                     }
                 }
 
+                // Remove bullets that have hit something
+                bullets.removeAll(bulletsToRemove);
+
                 innerFrame.repaint(); // Repaint panel after moving bullets
                 try {
                     Thread.sleep(10); // Adjust speed of bullets
                 } catch (InterruptedException ex) {
-                	System.out.println("IN catch");
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+
+        // Spider movement thread
+        new Thread(() -> {
+            while (true) {
+                spider.update();
+                innerFrame.repaint(); // Repaint panel after moving the spider
+                // Check for collision between spider and player
+                if (spider.posX < x + 32 && spider.posX + spider.size > x && spider.posY < y + 32 && spider.posY + spider.size > y) {
+                    JOptionPane.showMessageDialog(innerFrame, "You lose");
+                    System.exit(0); // Exit the game
+                }
+                try {
+                    Thread.sleep(10); // Adjust speed of the spider
+                } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
             }
@@ -210,94 +227,87 @@ public class GameScreenTest {
         outerFrame.setVisible(true);
         innerFrame.requestFocusInWindow();
     }
-}
 
-class CentipedeBody extends JPanel implements ActionListener {
-    public static final int UNIT_SIZE = 20;
-    private static final int WIDTH = 1936;
-    private static final int HEIGHT = 1056;
-    private static final int DELAY = 100;
-    private Timer timer;
-    public int[] x;
-    public int[] y;
-    public int[] velX;
-    public int[] velY;
-    private int centipedeLength;
+    public static class Spider {
+        private int posX, posY, size;
+        private Color color;
+        private int vx, vy;
+        private int stepsRemaining;
+        private int stage; // 0 for "M" shape, 1 for vertical movement
 
-    public CentipedeBody(int startX, int startY, int length, boolean movingRight) {
-        this.centipedeLength = length;
-        this.x = new int[length];
-        this.y = new int[length];
-        this.velX = new int[length];
-        this.velY = new int[length];
-
-        for (int i = 0; i < centipedeLength; i++) {
-            x[i] = startX + i * UNIT_SIZE;
-            y[i] = startY;
-            velX[i] = movingRight ? UNIT_SIZE : -UNIT_SIZE;
-            velY[i] = 0;
+        public Spider(int posX, int posY, int size, Color color, int vx, int vy) {
+            this.posX = posX;
+            this.posY = posY;
+            this.size = size;
+            this.color = color;
+            this.vx = vx;
+            this.vy = vy;
+            this.stepsRemaining = (int) (Math.random() * 50) + 5;
+            this.stage = 0;
         }
 
-        timer = new Timer(DELAY, this);
-        timer.start();
-    }
-
-    public int getLength() {
-        return centipedeLength;
-    }
-
-    public void drawCentipede(Graphics g) {
-        g.setColor(Color.GREEN);
-        for (int i = 0; i < centipedeLength; i++) {
-            g.fillOval(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
-        }
-        g.setColor(Color.RED);
-        g.fillOval(x[centipedeLength - 1] + UNIT_SIZE / 4, y[centipedeLength - 1] + UNIT_SIZE / 4 - 2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
-        g.fillOval(x[centipedeLength - 1] + UNIT_SIZE / 4, 8 + y[centipedeLength - 1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
-    }
-
-    public void move() {
-        for (int i = 0; i < centipedeLength; i++) {
-            x[i] += velX[i];
-            y[i] += velY[i];
-
-            // Check for collision with mushrooms
-            for (int j = 0; j < GameScreenTest.mushroomX.size(); j++) {
-                int mx = GameScreenTest.mushroomX.get(j);
-                int my = GameScreenTest.mushroomY.get(j);
-                boolean collisionX = (x[i] >= mx && x[i] < mx + UNIT_SIZE) || (x[i] + UNIT_SIZE > mx && x[i] + UNIT_SIZE <= mx + UNIT_SIZE);
-                boolean collisionY = (y[i] >= my - 10 && y[i] < my + UNIT_SIZE) || (y[i] + UNIT_SIZE > my && y[i] + UNIT_SIZE <= my + UNIT_SIZE);
-
-                if (collisionX && collisionY) {
-                    // Mushroom hit, change direction and move down
-                    y[i] += UNIT_SIZE;
-                    velX[i] *= -1; // Change direction
-                    break; // Exit the loop after collision with one mushroom
+        public void update() {
+            if (stage == 0) {
+                if (stepsRemaining > 0) {
+                    posX += vx;
+                    posY -= vy;
+                    stepsRemaining--;
+                } else {
+                    stage = 1;
+                    stepsRemaining = (int) (Math.random() * 50) + 5;
+                }
+            } else if (stage == 1) {
+                if (stepsRemaining > 0) {
+                    // Move vertically up
+                    posY -= vy;
+                    stepsRemaining--;
+                } else {
+                    // If in the top half of the frame, bounce back towards the bottom
+                    if (posY < PANEL_HEIGHT / 2) {
+                        vy = -vy;
+                    }
+                    stage = 2; // Move to diagonally down stage
+                    stepsRemaining = (int) (Math.random() * 50) + 5;
+                }
+            } else {
+                if (stepsRemaining > 0) {
+                    // Move diagonally down
+                    posX += vx;
+                    posY += vy;
+                    stepsRemaining--;
+                } else {
+                    // Change stage and reset steps
+                    stage = 0; // Move back to "M" shape stage
+                    stepsRemaining = (int) (Math.random() * 50) + 5; // Random number of steps for next movement
                 }
             }
 
-            // Check if the centipede goes out of bounds
-            if (x[i] < 0 || x[i] >= WIDTH) {
-                y[i] += UNIT_SIZE;
-                velX[i] *= -1; // Reverse direction
+            // Bounce off walls
+            if (posX <= 0 || posX + size >= PANEL_WIDTH) {
+                vx = -vx;
+            }
+            if (posY <= PANEL_HEIGHT / 2 || posY + size >= 922) {
+                vy = -vy;
             }
         }
-    }
 
-    public void shorten(int index) {
-        this.centipedeLength = index;
-    }
+        public void draw(Graphics g) {
+            g.setColor(Color.BLACK);
+            g.fillOval(posX - 5, posY - 5, size + 10, size + 10);
 
-    public void moveDownAndSwitchDirection() {
-        for (int i = 0; i < centipedeLength; i++) {
-            y[i] += UNIT_SIZE; // Move down
-            velX[i] *= -1; // Switch direction
+            g.setColor(color);
+            g.fillOval(posX, posY, size, size);
+            //left side
+            g.drawLine(posX + 2, posY, posX - 3, posY - 3);
+            g.drawLine(posX, posY + 5, posX - 5, posY + 5);
+            g.drawLine(posX, posY + 9, posX - 5, posY + 9);
+            g.drawLine(posX + 2, posY + 12, posX - 3, posY + 15);
+
+            //right side
+            g.drawLine(posX + 12, posY, posX + 17, posY - 3);
+            g.drawLine(posX + 15, posY + 5, posX + 19, posY + 5);
+            g.drawLine(posX + 15, posY + 9, posX + 19, posY + 9);
+            g.drawLine(posX + 12, posY + 12, posX + 17, posY + 15);
         }
-    }
-
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        move();
-        GameScreenTest.innerFrame.repaint();
     }
 }
