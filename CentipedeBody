@@ -18,16 +18,16 @@ public class CentipedeBody extends JPanel implements ActionListener {
     public int[] y;
     public int[] velX;
     public int[] velY;
-    private int centipedeLength;
+    public int length;
 
     public CentipedeBody(int startX, int startY, int length, boolean movingRight) {
-        this.centipedeLength = length;
+        this.length = length;
         this.x = new int[length];
         this.y = new int[length];
         this.velX = new int[length];
         this.velY = new int[length];
 
-        for (int i = 0; i < centipedeLength; i++) {
+        for (int i = 0; i < length; i++) {
             x[i] = startX + i * UNIT_SIZE;
             y[i] = startY;
             velX[i] = movingRight ? UNIT_SIZE : -UNIT_SIZE;
@@ -39,21 +39,24 @@ public class CentipedeBody extends JPanel implements ActionListener {
     }
 
     public int getLength() {
-        return centipedeLength;
+        return length;
     }
 
     public void drawCentipede(Graphics g) {
+    	if (length <= 0) {
+              return; // Avoid drawing if the length is zero or negative
+        }
         g.setColor(Color.GREEN);
-        for (int i = 0; i < centipedeLength; i++) {
+        for (int i = 0; i < length; i++) {
             g.fillOval(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
         }
         g.setColor(Color.RED);
-        g.fillOval(x[centipedeLength - 1] + UNIT_SIZE / 4, y[centipedeLength - 1] + UNIT_SIZE / 4 - 2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
-        g.fillOval(x[centipedeLength - 1] + UNIT_SIZE / 4, 8 + y[centipedeLength - 1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
+        g.fillOval(x[length - 1] + UNIT_SIZE / 4, y[length - 1] + UNIT_SIZE / 4 - 2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
+        g.fillOval(x[length - 1] + UNIT_SIZE / 4, 8 + y[length - 1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
     }
 
     public void move() {
-        for (int i = 0; i < centipedeLength; i++) {
+        for (int i = 0; i < length; i++) {
             x[i] += velX[i];
             y[i] += velY[i];
 
@@ -81,11 +84,27 @@ public class CentipedeBody extends JPanel implements ActionListener {
     }
 
     public void shorten(int index) {
-        this.centipedeLength = index;
+    	if (index <= 0) {
+            length = 0; // Ensure length is not negative
+            return;
+        }
+    	length = index;
+        int[] newX = new int[length];
+        int[] newY = new int[length];
+        int[] newVelX = new int[length];
+        int[] newVelY = new int[length];
+        System.arraycopy(x, 0, newX, 0, length);
+        System.arraycopy(y, 0, newY, 0, length);
+        System.arraycopy(velX, 0, newVelX, 0, length);
+        System.arraycopy(velY, 0, newVelY, 0, length);
+        x = newX;
+        y = newY;
+        velX = newVelX;
+        velY = newVelY;
     }
 
     public void moveDownAndSwitchDirection() {
-        for (int i = 0; i < centipedeLength; i++) {
+        for (int i = 0; i < length; i++) {
             y[i] += UNIT_SIZE; // Move down
             velX[i] *= -1; // Switch direction
         }
