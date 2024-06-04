@@ -103,6 +103,9 @@ public class CentipedeBody extends JPanel implements ActionListener {
         velY = newVelY;
     }
 
+
+
+
     public void moveDownAndSwitchDirection() {
         for (int i = 0; i < length; i++) {
             y[i] += UNIT_SIZE; // Move down
