@@ -1,121 +1,96 @@
 package Java_Centipede;
-
 import javax.swing.*;
-
-import Java_Centipede.LilyGameScreen.Spider;
-
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
-public class GameScreen {
+public class LilyGameScreen {
     private static final int PANEL_WIDTH = 1936;
-    private static ArrayList<String> mushroomStatus; // Store status of each mushroom
     private static final int PANEL_HEIGHT = 1056;
     private static Timer smoothMovementTimer;
+    private static int scoreFontSize = 24;
+    private static ArrayList<Integer> mushroomHits; // Store number of hits for each mushroom
+
     private static int moveDirectionX = 0; // -1 for left, 1 for right, 0 for no movement
     private static int moveDirectionY = 0; // -1 for up, 1 for down, 0 for no movement
     private static final int MOVE_AMOUNT = 5; // Adjust the speed of movement
-
+  
     private static int x = PANEL_WIDTH / 2; // Initial x position of the player
     private static int y = PANEL_HEIGHT / 2 + 300; // Initial y position of the player
-
+    public static JPanel innerFrame;
+    // List to store active bullets
     private static int mouseXOffset; // Offset between mouse click position and player position
     private static int mouseYOffset;
     private static boolean isDragging = false; // Flag to indicate if the player is being dragged
-
-    // List to store active bullets
+    private static ArrayList<Rectangle> mushroomBorders;
     private static List<Point> bullets = new ArrayList<>();
     private static final int BULLET_SIZE = 5; // Adjust bullet size
     private static final int BULLET_SPEED = 10;
+    public static ArrayList<Integer> mushroomX;
+    public static ArrayList<Integer> mushroomY;
+    private static ArrayList<String> mushroomStatus; // Store status of each mushroom
+    private static String[][] centipedeMap;
 
-    private static ArrayList<Integer> mushroomX;
-    private static ArrayList<Integer> mushroomY;
-    private static ArrayList<Integer> mushroomHits; // Store number of hits for each mushroom
-
-    private static ArrayList<Rectangle> mushroomBorders;
-    private static Spider spider;
-
+    
     public static int gameScore;
 
     private static int playerLives = 3;
     private static boolean isPlayerDead = false;
     private static Timer deathAnimationTimer;
 
-    private static int scoreFontSize = 24;
-    private static final int MAX_FONT_SIZE = 32;
-    private static final int MIN_FONT_SIZE = 24;
-    private static final int FONT_ANIMATION_STEP = 2;
-    private static JPanel innerFrame;
+    private static Graphics2D g2d;
+
     private static List<CentipedeBody> centipedes = new ArrayList<>();
+    private static Spider spider;
 
     public static void main(String[] args) {
         mushroomX = new ArrayList<>();
         mushroomY = new ArrayList<>();
-        mushroomHits = new ArrayList<>();
         mushroomStatus = new ArrayList<>();
+        mushroomHits= new ArrayList<>();
         mushroomBorders = new ArrayList<>();
-
+        centipedeMap = new String[1936][1056];
         for (int i = 0; i < 50; i++) {
-            mushroomX.add((int) (Math.random() * (PANEL_WIDTH - 6))); // Random x within the first half of the panel
+        	mushroomX.add((int) (Math.random() * (PANEL_WIDTH - 6))); // Random x within the first half of the panel
             mushroomY.add((int) (Math.random() * (PANEL_HEIGHT - 700)) + (PANEL_HEIGHT / 11 + 5)); // Random y within the panel
-            mushroomHits.add(0); // Initially, all mushrooms have 0 hits
+            mushroomHits.add(0);
             mushroomStatus.add("Full"); // Initially, all mushrooms are full
         }
-
-        SwingUtilities.invokeLater(GameScreen::createAndShowGUI);
+        createAndShowGUI();
     }
 
     private static void createAndShowGUI() {
         JFrame outerFrame = new JFrame("Outer Frame");
-
         outerFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         outerFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         outerFrame.setVisible(true);
         outerFrame.setLayout(new BorderLayout());
-
         innerFrame = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g.create();
-
-                // Draw top and bottom borders
+                g2d = (Graphics2D) g.create();
+                int shadowHeight = 5; // Height of the shadow
+                int marginSize = getHeight() / 11; // Size of the margin
+                // Draw top shadow
                 g2d.setColor(Color.GREEN);
-                int borderMarginBottom = (int) (PANEL_HEIGHT * 0.135); // 20% of panel height
-                int borderMarginTop = (int)(PANEL_HEIGHT * 0.09);
-
-                // Top border
-                g2d.fillRect(0, borderMarginTop, PANEL_WIDTH, 5);
-
-                // Bottom border
-                g2d.fillRect(0, PANEL_HEIGHT - borderMarginBottom - 5, PANEL_WIDTH, 5);
-
-                // Draw player with death animation effect
-                if (isPlayerDead) {
-                    float alpha = 1.0f - (deathAnimationTimer.getDelay() / 100.0f); // Calculate alpha based on time
-                    g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
-                }
+                g2d.fillRect(0, marginSize - shadowHeight, getWidth(), shadowHeight);
+                // Draw bottom shadow
+                g2d.fillRect(0, getHeight() - marginSize, getWidth(), shadowHeight);
+                // Draw player
                 ImageIcon playerIcon = new ImageIcon(getClass().getResource("blackCursor.png"));
                 Image playerImage = playerIcon.getImage();
                 g2d.drawImage(playerImage, x, y, this);
-
-                // Reset alpha composite to default
-                g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1.0f));
-
-
-                // Clear and update the mushroomBorders list
+                // Draw mushrooms
                 mushroomBorders.clear();
-
-                // Draw mushrooms and update mushroomBorders
+             // Draw mushrooms and update mushroomBorders
                 for (int i = 0; i < mushroomX.size(); i++) {
                     int mx = mushroomX.get(i);
                     int my = mushroomY.get(i);
@@ -152,13 +127,11 @@ public class GameScreen {
                             break;
                     }
                 }
-
                 // Draw bullets
                 g2d.setColor(Color.BLUE);
                 for (Point bullet : bullets) {
                     g2d.fillRect(bullet.x, bullet.y, BULLET_SIZE, BULLET_SIZE);
                 }
-
                 // Draw game score
                 g2d.setColor(Color.WHITE);
                 g2d.setFont(new Font("Arial", Font.BOLD, scoreFontSize));
@@ -173,19 +146,19 @@ public class GameScreen {
                 int livesX = PANEL_WIDTH - metrics.stringWidth(livesText) - 10;
                 int livesY = metrics.getHeight();
                 g2d.drawString(livesText, livesX, livesY);
-             // Draw centipedes
+                // Draw centipedes
                 for (CentipedeBody centipede : centipedes) {
                     centipede.drawCentipede(g2d);
                 }
+                // Draw spider
                 if (spider != null) {
                     spider.draw(g2d);
                 }
                 g2d.dispose();
-
-
             }
-        };
 
+            
+        };
         smoothMovementTimer = new Timer(10, new ActionListener() { // Adjusted to 10 ms for smoother movement
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -271,73 +244,61 @@ public class GameScreen {
                 }
             }
         });
-     // Initialize centipedes
-        centipedes.add(new CentipedeBody(0, 87, 20, true));
-        spider = new Spider((int) (Math.random() * PANEL_WIDTH), PANEL_HEIGHT / 2 + 300, 15, Color.GREEN, 6, 6); 
 
-        // Mouse motion listener for dragging
-        innerFrame.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                if (isDragging) {
-                    int newX = e.getX() - mouseXOffset;
-                    int newY = e.getY() - mouseYOffset;
-                    if (checkNonCollision(newX, newY)) {
-                        x = newX;
-                        y = newY;
-                        innerFrame.repaint();
-                    }
-                }
-            }
-        });
+        // Initialize centipedes
+        centipedes.add(new CentipedeBody(0, 107, 20, true));
+        // Initialize spider
+        spider = new Spider(0, PANEL_HEIGHT / 2 + 300, 15, Color.GREEN, 6, 6);
 
         // Bullet animation thread
         new Thread(() -> {
             while (true) {
-                int bulletIndex = 0;
-                List<Point> bulletsToRemove = new ArrayList<>();
-               
+            	 int bulletIndex = 0;
+                 List<Point> bulletsToRemove = new ArrayList<>();
+                
 
-                while (bulletIndex < bullets.size()) {
-                    Point bullet = bullets.get(bulletIndex);
-                    bullet.y -= BULLET_SPEED;
+                 while (bulletIndex < bullets.size()) {
+                     Point bullet = bullets.get(bulletIndex);
+                     bullet.y -= BULLET_SPEED;
 
-                    boolean bulletRemoved = false;
+                     boolean bulletRemoved = false;
 
-                    int mushroomIndex = 0;
-                    while (mushroomIndex < mushroomX.size()) {
-                        int mx = mushroomX.get(mushroomIndex);
-                        int my = mushroomY.get(mushroomIndex);
+                     int mushroomIndex = 0;
+                     while (mushroomIndex < mushroomX.size()) {
+                         int mx = mushroomX.get(mushroomIndex);
+                         int my = mushroomY.get(mushroomIndex);
 
-                        if (bullet.x >= mx && bullet.x <= mx + 20 && bullet.y >= my && bullet.y <= my + 20) {
-                            // Bullet hit a mushroom
-                            int hits = mushroomHits.get(mushroomIndex);
-                            if (hits < 3) {
-                                mushroomHits.set(mushroomIndex, hits + 1);
-                            } else {
-                                mushroomX.remove(mushroomIndex);
-                                mushroomY.remove(mushroomIndex);
-                                mushroomHits.remove(mushroomIndex);
-                                gameScore += 200;
+                         if (bullet.x >= mx && bullet.x <= mx + 20 && bullet.y >= my && bullet.y <= my + 20) {
+                             // Bullet hit a mushroom
+                             int hits = mushroomHits.get(mushroomIndex);
+                             if (hits < 3) {
+                                 mushroomHits.set(mushroomIndex, hits + 1);
+                             } else {
+                                 mushroomX.remove(mushroomIndex);
+                                 mushroomY.remove(mushroomIndex);
+                                 mushroomHits.remove(mushroomIndex);
+                                 gameScore += 200;
 
-                                
-                            }
+                                 
+                             }
 
-                            bullets.remove(bulletIndex);
-                            bulletRemoved = true;
-                            break;
-                        }
+                             bullets.remove(bulletIndex);
+                             bulletRemoved = true;
+                             break;
+                         }
 
-                        mushroomIndex++;
+                         mushroomIndex++;
+                     }
+
+                     if (!bulletRemoved) {
+                         bulletIndex++;
                     }
 
-                    if (!bulletRemoved) {
-                        bulletIndex++;
-                   }
                  // Inside the bullet animation thread where collision is detected
                     for (CentipedeBody centipede : centipedes) {
                         boolean hit = false;
                         for (int i = 0; i < centipede.getLength(); i++) {
+                        	
                             if (bullet.x >= centipede.x[i] && bullet.x <= centipede.x[i] + CentipedeBody.UNIT_SIZE &&
                                     bullet.y >= centipede.y[i] && bullet.y <= centipede.y[i] + CentipedeBody.UNIT_SIZE) {
                                 // Bullet hit a centipede segment
@@ -358,6 +319,7 @@ public class GameScreen {
                                 hit = true;
                                 break; // Exit the loop after hitting one segment
                             }
+                            
                         }
                         if (hit) {
                             break; // Stop checking further if a hit was registered
@@ -368,6 +330,14 @@ public class GameScreen {
 
                 // Remove bullets that have hit something
                 bullets.removeAll(bulletsToRemove);
+                for(CentipedeBody centipede : centipedes)
+                {
+                	if(centipede.isCollisionWithPlayer(x,y))
+                	{
+                		JOptionPane.showMessageDialog(innerFrame, "You lose");
+                        System.exit(0); // Exit the game
+                	}
+                }
 
                 innerFrame.repaint(); // Repaint panel after moving bullets
                 try {
@@ -378,36 +348,28 @@ public class GameScreen {
             }
         }).start();
 
+        // Spider movement thread
+        new Thread(() -> {
+            while (true) {
+                spider.update();
+                innerFrame.repaint(); // Repaint panel after moving the spider
+                // Check for collision between spider and player
+                if (spider.posX < x + 32 && spider.posX + spider.size > x && spider.posY < y + 32 && spider.posY + spider.size > y) {
+                    JOptionPane.showMessageDialog(innerFrame, "You lose");
+                    System.exit(0); // Exit the game
+                }
+                try {
+                    Thread.sleep(20); // Adjust speed of the spider
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+
         outerFrame.add(innerFrame, BorderLayout.CENTER);
         outerFrame.setVisible(true);
- // Spider movement thread
-    new Thread(() -> {
-        while (true) {
-            spider.update();
-            innerFrame.repaint(); // Repaint panel after moving the spider
-            // Check for collision between spider and player
-            if (spider.posX < x + 32 && spider.posX + spider.size > x && spider.posY < y + 32 && spider.posY + spider.size > y) {
-                JOptionPane.showMessageDialog(innerFrame, "You lose");
-                System.exit(0); // Exit the game
-            }
-            try {
-                Thread.sleep(15); // Adjust speed of the spider
-            } catch (InterruptedException ex) { 
-                ex.printStackTrace();
-            }
-        }
-    }).start();
-    /*for(LilyCentipedeBody b: centipedes) {
-    	new Thread(() -> {
-    		b.move();
-    		innerFrame.repaint();
-    		
-    }).start();*/
-    
-    outerFrame.add(innerFrame, BorderLayout.CENTER);
-    outerFrame.setVisible(true);
-    innerFrame.requestFocusInWindow();
-}
+        innerFrame.requestFocusInWindow();
+    }
 
     public static class Spider {
         private int posX, posY, size;
@@ -491,9 +453,6 @@ public class GameScreen {
             g.drawLine(posX + 12, posY + 12, posX + 17, posY + 15);
         }
     }
-
-
-
     private static void startDeathAnimation() {
         deathAnimationTimer = new Timer(80, new ActionListener() {
             float alpha = 1.0f;
@@ -516,11 +475,15 @@ public class GameScreen {
 
     private static boolean checkNonCollision(int newX, int newY) {
         Rectangle playerRect = new Rectangle(newX, newY, 40, 45);
-        for (Rectangle mushroomRect : mushroomBorders) {
-            if (playerRect.intersects(mushroomRect)) {
-                return false;
+        
+        	for (Rectangle mushroomRect : mushroomBorders) {
+                if (playerRect.intersects(mushroomRect)) {
+                    return false;
+                }
             }
-        }
+        	
+        
+       
         return true;
     }
 }
