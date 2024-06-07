@@ -54,7 +54,15 @@ public class CentipedeBody extends JPanel implements ActionListener {
         g.fillOval(x[length - 1] + UNIT_SIZE / 4, y[length - 1] + UNIT_SIZE / 4 - 2, UNIT_SIZE / 4, UNIT_SIZE / 4); // Left eye
         g.fillOval(x[length - 1] + UNIT_SIZE / 4, 8 + y[length - 1] + UNIT_SIZE / 4, UNIT_SIZE / 4, UNIT_SIZE / 4); // Right eye
     }
-
+    public boolean isCollisionWithPlayer(int playerX, int playerY) {
+        for (int i = 0; i < getLength(); i++) {
+            if (playerX >= x[i] && playerX <= x[i] + UNIT_SIZE &&
+                playerY >= y[i]-UNIT_SIZE-5 && playerY <= y[i] + UNIT_SIZE+5) {
+                return true;
+            }
+        }
+        return false;
+    }
     public void move() {
         for (int i = 0; i < length; i++) {
             x[i] += velX[i];
@@ -102,9 +110,6 @@ public class CentipedeBody extends JPanel implements ActionListener {
         velX = newVelX;
         velY = newVelY;
     }
-
-
-
 
     public void moveDownAndSwitchDirection() {
         for (int i = 0; i < length; i++) {
