@@ -311,6 +311,7 @@ public class LilyGameScreen {
                                             centipedes.add(newCentipede);
                                         }
                                         centipede.shorten(i);
+                                        gameScore+=400;
                                         bulletRemoved = true;
                                         break;
                                     }
