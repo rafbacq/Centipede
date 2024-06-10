@@ -181,7 +181,12 @@ public class GameScreenTest {
                                 mushroomX.add(centipede.x[i]);
                                 mushroomY.add(centipede.y[i]);
                                 mushroomStatus.add("Full");
-
+                               /* if (x >= centipede.x[i] && x <= centipede.x[i] + CentipedeBody.UNIT_SIZE &&
+                                        y >= centipede.y[i] && y <= centipede.y[i] + CentipedeBody.UNIT_SIZE) {
+                                    JOptionPane.showMessageDialog(innerFrame, "You lose");
+                                    System.exit(0); // Exit the game
+                                }
+*/
                                 // Split the centipede
                                 if (i < centipede.getLength() - 1) {
                                     CentipedeBody newCentipede = new CentipedeBody(centipede.x[i + 1], centipede.y[i + 1], centipede.getLength() - i - 1, centipede.velX[0] < 0);
@@ -202,7 +207,12 @@ public class GameScreenTest {
 
                 // Remove bullets that have hit something
                 bullets.removeAll(bulletsToRemove);
-
+                for (CentipedeBody centipede : centipedes) {
+                    if (centipede.isCollisionWithPlayer(x, y)) {
+                        JOptionPane.showMessageDialog(innerFrame, "You lose");
+                        System.exit(0); // Exit the game
+                    }
+                }
                 innerFrame.repaint(); // Repaint panel after moving bullets
                 try {
                     Thread.sleep(10); // Adjust speed of bullets
@@ -213,6 +223,24 @@ public class GameScreenTest {
         }).start();
 
         // Spider movement thread
+        new Thread(() -> {
+            while (true) {
+                spider.update();
+                innerFrame.repaint(); // Repaint panel after moving the spider
+                // Check for collision between spider and player
+                if (spider.posX < x + 32 && spider.posX + spider.size > x && spider.posY < y + 32 && spider.posY + spider.size > y) {
+                    JOptionPane.showMessageDialog(innerFrame, "You lose");
+                    System.exit(0); // Exit the game
+                }
+                try {
+                    Thread.sleep(10); // Adjust speed of the spider
+                } catch (InterruptedException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        }).start();
+        
+     // Spider movement thread
         new Thread(() -> {
             while (true) {
                 spider.update();
