@@ -7,6 +7,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionAdapter;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -180,16 +181,26 @@ public class LilyGameScreen {
                 int keyCode = e.getKeyCode();
                 switch (keyCode) {
                     case KeyEvent.VK_LEFT:
-                        moveDirectionX = -1;
+                    	moveDirectionX=-1;
+                       
                         break;
                     case KeyEvent.VK_RIGHT:
-                        moveDirectionX = 1;
+                    	
+                    		moveDirectionX = 1;
+                    	
+            
                         break;
                     case KeyEvent.VK_UP:
-                        moveDirectionY = -1;
+                    
+                    		moveDirectionY = -1;
+                    	
+               
                         break;
                     case KeyEvent.VK_DOWN:
-                        moveDirectionY = 1;
+                    
+                    		moveDirectionY = 1;
+                    
+                    
                         break;
                     case KeyEvent.VK_SPACE: // Space bar pressed
                         // Add a new bullet position to the list
@@ -230,17 +241,27 @@ public class LilyGameScreen {
 
         // Mouse press listener
         innerFrame.addMouseListener(new MouseAdapter() {
-            @Override
+        	@Override
             public void mousePressed(MouseEvent e) {
-                // Check if the mouse click is on the player image
-                if (e.getX() >= x && e.getX() <= x + 100 && e.getY() >= y && e.getY() <= y + 100) {
-                    if (!isDragging) {
-                        mouseXOffset = e.getX() - x;
-                        mouseYOffset = e.getY() - y;
-                        isDragging = true;
-                    } else {
-                        isDragging = false;
-                    }
+                if (isMouseOverPlayer(e.getX(), e.getY())) {
+                    isDragging = true;
+                    mouseXOffset = e.getX() - x;
+                    mouseYOffset = e.getY() - y;
+                }
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                isDragging = false;
+            }
+        });
+        innerFrame.addMouseMotionListener(new MouseMotionAdapter() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (isDragging) {
+                    x = e.getX() - mouseXOffset;
+                    y = e.getY() - mouseYOffset;
+                    innerFrame.repaint();
                 }
             }
         });
@@ -492,5 +513,9 @@ public class LilyGameScreen {
         
        
         return true;
+    }
+    private static boolean isMouseOverPlayer(int mouseX, int mouseY) {
+        Rectangle playerRect = new Rectangle(x, y, 40, 40);
+        return playerRect.contains(mouseX, mouseY);
     }
 }
